@@ -33,10 +33,7 @@
 	var uniqueLabelArray;
 	var selectedItemsArray = [];
 	var svg;
-	// var color = d3.scaleOrdinal(d3.schemeCategory10);
 	var color = d3.schemeCategory10;
-	console.log(d3.schemeCategory10);
-	console.log(d3.schemeCategory10[1]);
 	var control_yaxisArray = ["人数", "各職種内パーセント"];
 	var yaxis_mode = 0;
 
@@ -73,6 +70,9 @@
 		.append("tr")
 		.attr("id", function (d, i) { return "yaxis" + i; })
 		.attr("name", "yaxis")
+		.style("background-color", function (d, i) {
+			if (i == 0) return "rgb(220, 220, 220)";
+		})
 		.attr("onclick","changeValue(this)")
 		.append("td")
 		.text(function (d) { return d; });
@@ -141,7 +141,7 @@
 			scale.range([0, graph_base - y_margin]);
 
 			if (yaxis_mode == 0) {
-				scale.domain([0, d3.max(numberArray)]);
+				scale.domain([0, d3.max(numberArray) * 2]);
 			} else if (yaxis_mode == 1) {
 				for (var i = 0; i < selectedItemsArray.length; i++) {
 					var tmp_numberArray_man = numberArray.slice((2 * i) * uniqueLabelArray.income.length, (2 * i + 1) * uniqueLabelArray.income.length);
@@ -153,7 +153,6 @@
 						numberArray[(2 * i) * uniqueLabelArray.income.length + j] = numberArray[(2 * i) * uniqueLabelArray.income.length + j] / tmp_sum_man * 100;
 						numberArray[(2 * i + 1) * uniqueLabelArray.income.length + j] = numberArray[(2 * i + 1) * uniqueLabelArray.income.length + j] / tmp_sum_female * 100;
 					}
-					console.log(numberArray)
 				}
 				scale.domain([0, 50]);
 			}
@@ -161,7 +160,83 @@
 			// 以下、描画
 			var bars = svg.selectAll("rect").data(numberArray).enter().append("rect");
 			if (yaxis_mode == 0) {
+				var bar_width = parseInt(bar_default_width / selectedItemsArray.length);
+				bars
+				.attr("x", function (d, i) {
+					return (parseInt(i / (uniqueLabelArray.income.length * 2))) * bar_width
+						+ (i % uniqueLabelArray.income.length) * (bar_default_width + bar_margin)
+						+ x_margin;})
+				.attr("y", graph_base)
+				.attr("height", 0)
+				.attr("width", bar_width - 2)
+				.attr("fill", function (d, i) {
+					return color[parseInt(i / uniqueLabelArray.income.length)];
+				})
+				.transition()
+				.duration(1200)
+				.delay(function (d, i) {
+					return i % uniqueLabelArray.income.length * 120;
+				})
+				.attr("y", function (d, i) {
+					if (i % (uniqueLabelArray.income.length * 2) < uniqueLabelArray.income.length) {
+						return graph_base - scale(d)
+					} else {
+						return graph_base - scale(d) - scale(numberArray[i - uniqueLabelArray.income.length]);
+					}
+				})
+				.attr("height", function (d) { return scale(d) });
 
+				var text = svg.selectAll("text").data(uniqueLabelArray.income).enter();
+				text.append("text")
+				.text(function (d) { return d; })
+				.attr("x", -600)
+				.attr("y", function (d, i) { return i * (bar_default_width + bar_margin) + x_margin + bar_default_width / 2 ;})
+				.attr("transform", "rotate(-90)")
+				.attr("font-family", "sans-serif")
+				.attr("fill", "black");
+
+				var yAxis = d3.axisLeft(
+					d3.scaleLinear()
+					.domain(scale.domain())
+					.range([graph_base, y_margin]));
+
+				svg.append("g")
+				.attr("id", "axis")
+				.attr("transform", "translate("+ x_margin + ", -1)")
+				.call(yAxis);
+
+				svg.select("#axis").selectAll("path")
+				.attr("fill", "none")
+				.attr("stroke", "black")
+				.attr("shape-rendering", "crispEdges");
+
+				// 凡例描画
+				var legendItems = [];
+				for (var n = 0; n < selectedItemsArray.length; n++) {
+					legendItems.push(selectedItemsArray[n] + " (男性)");
+					legendItems.push(selectedItemsArray[n] + " (女性)");
+				}
+
+				var legend = svg.selectAll(".legend")
+				.data(legendItems)
+				.enter().append("g")
+				.attr("class", "legend")
+				.attr("transform", function (d, i) {
+					return "translate(600, " + (i * 20) + ")"
+				});
+				legend.append("rect")
+				.attr("x", 0)
+				.attr("width", 18)
+				.attr("height", 18)
+				.style("fill", function (d, i) {
+					return color[i];
+				});
+				legend.append("text")
+				.attr("x", 25)
+				.attr("y", 9)
+				.attr("dy", ".35em")
+				.style("text-anchor", "first")
+				.text(function (d) { return d; });
 			} else if (yaxis_mode == 1) {
 				var bar_width = parseInt(bar_default_width / (selectedItemsArray.length * 2));
 				bars
