@@ -1,0 +1,42 @@
+<html lang="en"><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>D3 Test</title>
+<script type="text/javascript" src="../javascript/d3.js"></script>
+<style type="text/css"></style>
+</head>
+<body>
+<h1>My first SVG</h1>
+
+<svg width="100" height="100">
+    <text x="0" y="15" fill="red" transform="rotate(30, 20, 40)">I love SVG</text>
+</svg>
+<script type="text/javascript">
+    var dataset;
+
+    d3.csv("../csv/data_basics.csv", function (error, data) {
+        if (error) {console.log("error!")}
+        else {
+            dataset = data;
+            showGraph();
+        }
+    });
+    
+    function showGraph() {
+        var svg = d3.select("body").append("svg").attr("width", 1000).attr("height", 1000);
+        var circles = svg.selectAll("circle").data(dataset).enter().append("circle");
+
+        circles.attr("cx", function (d, i) { return(i * 100) + 50; })
+        .attr("cy", 100)
+        .attr("r", function (d) { return d.score/2; })
+        .attr("stroke", "blank")
+        .attr("fill", "lightblue");
+
+        var text = svg.selectAll("text").data(dataset).enter().append("text");
+        text.text(function (d) { return d.group; })
+        .attr("x", function (d, i) { return (i * 100) + 45; })
+        .attr("y", 20);
+    }
+
+</script>
+</body>
+</html>
