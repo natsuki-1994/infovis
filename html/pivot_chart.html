@@ -1,0 +1,210 @@
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta charset="utf-8">
+	<title>D3 Test</title>
+	<script type="text/javascript" src="../javascript/d3.js"></script>
+	<style type="text/css">
+	</style>
+</head>
+<body>
+<table height="600" width="1500" border="1">
+	<tr>
+		<td width="300" valign="top">
+			<table cellpadding="5">
+				<tr><td><b>職種:</b></td></tr>
+				<tr><td>
+					<table width="280" id="control_job">
+					</table>
+				</td></tr>
+				<tr><td><b>y軸:</b></td></tr>
+				<tr><td>
+					<table width="280" id="control_yaxis">
+					</table>
+				</td></tr>
+			</table>
+		</td>
+		<td width="1200" id="graph"></td>
+	</tr>
+</table>
+
+<script type="text/javascript">
+
+	var salary_data;
+	var uniqueLabelArray;
+	var selectedItemsArray = [];
+	var svg;
+	var color = d3.scaleOrdinal(d3.schemeCategory10);
+	var control_yaxisArray = ["人数", "各職種内パーセント"];
+	var yaxis_mode = 0;
+
+	d3.csv("../csv/data_salary2012.csv", function(error, data) {
+		if (error) {
+			console.log("error");
+		} else {
+			salary_data = data;
+			createLabelArrays(salary_data);
+			createPivotGraph();
+			svg=d3.select("#graph").append("svg").attr("width", 1200).attr("height", 600);
+		}
+	});
+
+	function createLabelArrays() {
+		// removing duplicates on labels
+		uniqueLabelArray = {"occupation":[], "gender":[], "income":[]};
+		salary_data.forEach(function(d, i) {
+			if (uniqueLabelArray.occupation.indexOf(d.occupation) < 0) uniqueLabelArray.occupation.push(d.occupation);
+			if (uniqueLabelArray.gender.indexOf(d.gender) < 0) uniqueLabelArray.gender.push(d.gender);
+			if (uniqueLabelArray.income.indexOf(d.income) < 0) uniqueLabelArray.income.push(d.income);
+		});
+	}
+
+	function createPivotGraph() {
+		d3.select("#control_job").selectAll("tr").data(uniqueLabelArray.occupation).enter()
+		.append("tr")
+		.attr("id", function(d, i) { return "job" + i; })
+		.attr("onclick","changeHighlight(this)")
+		.append("td")
+		.text(function (d) { return d; });
+
+		d3.select("#control_yaxis").selectAll("tr").data(control_yaxisArray).enter()
+		.append("tr")
+		.attr("id", function(d, i) { return "yaxis" + i; })
+		.attr("name", "yaxis")
+		.attr("onclick","changeValue(this)")
+		.append("td")
+		.text(function (d) { return d; });
+	}
+
+	function changeHighlight(obj){
+		var selected_color = "rgb(220, 220, 220)";
+		var unselected_color = "rgb(255, 255, 255)";
+		if (obj.style.backgroundColor == selected_color) {
+			obj.style.backgroundColor = unselected_color;
+
+			var index = parseInt(obj.id.slice(3));
+			selectedItemsArray.some(function(v, i) {
+				if (v == uniqueLabelArray.occupation[index]) {
+					selectedItemsArray.splice(i, 1);
+				}
+			});
+			changeView();
+		} else {
+			obj.style.backgroundColor = selected_color;
+
+			var index = parseInt(obj.id.slice(3));
+			selectedItemsArray.push(uniqueLabelArray.occupation[index]);
+
+			changeView();
+		}
+		console.log(selectedItemsArray);
+	}
+
+	function changeValue(obj)
+	{
+
+		var selected_color = "rgb(220, 220, 220)";
+		var unselected_color = "rgb(255, 255, 255)";
+		var all_yaxis = document.getElementsByName("yaxis");
+
+		if(obj.style.backgroundColor != selected_color){
+			for(var i=0; i<all_yaxis.length; i++){
+				all_yaxis.item(i).style.backgroundColor = unselected_color;
+			}
+			obj.style.backgroundColor = selected_color;
+			yaxis_mode = parseInt(obj.id.slice(5));
+
+			console.log(yaxis_mode);
+
+			changeView();
+		}
+	}
+
+	function changeView()
+	{
+
+		var salaryLabelArray = [];
+		var numberArray = [];
+
+		var bar_default_width = 50;
+		var bar_margin = 10;
+		var x_margin = 100;
+		var y_margin = 20;
+		var graph_base = 500;
+		//remove
+		svg.selectAll("*").remove();
+		if(selectedItemsArray.length != 0)
+		{
+			for(var j=0; j<selectedItemsArray.length; j++){
+				salary_data.some(function(v,i){
+					if(v.occupation==selectedItemsArray[j] && v.gender == '男性')
+						numberArray.push(parseInt(v.population));});
+			}
+			var scale = d3.scaleLinear();
+			scale.range([0,graph_base - y_margin]);
+
+			if(yaxis_mode==0)
+			{
+				scale.domain([0,d3.max(numberArray)]);
+			}
+			else if(yaxis_mode == 1)
+			{
+				for(var i=0; i< selectedItemsArray.length; i++)
+				{
+					var tmp_numberArray = numberArray.slice(i*
+						uniqueLabelArray.income.length,(i+1)*
+						uniqueLabelArray.income.length);
+					var tmp_sum =
+						tmp_numberArray.reduce(function(x,y){return x+y;});
+
+					for(var j=0; j<uniqueLabelArray.income.length;j++)
+					{
+						numberArray[i*uniqueLabelArray.income.length+j] =
+							numberArray[i*uniqueLabelArray.income.length +j]/tmp_sum * 100;
+					}
+				}
+
+
+				scale.domain([0,50]);
+			}
+			var bars = svg.selectAll("rect").data(numberArray)
+			.enter().append("rect");
+			var bar_width = parseInt(bar_default_width /
+				selectedItemsArray.length);
+			bars.attr("x",function(d,i){return (parseInt(i /
+					uniqueLabelArray.income.length))* bar_width + (i%
+				uniqueLabelArray.income.length)*(bar_default_width +
+				bar_margin) + x_margin;})
+			.attr("y",function(d){return graph_base-
+				scale(d);})
+			.attr("height",function(d){return scale(d);})
+			.attr("width",bar_width -2)
+			.attr("fill","lightgrey");
+			var text = svg.selectAll("text")
+			.data(uniqueLabelArray.income).enter();
+			var bars_text = text.append("text")
+			.text(function(d){ return d;})
+			.attr("x",-600)
+			.attr("y", function(d,i){return i*(bar_default_width +
+				bar_margin) + x_margin + bar_default_width/2 ;})
+			.attr("transform", "rotate(-90)")
+			.attr("font-family", "sans-serif")
+			.attr("fill","black");
+			//if文の外かも？
+			var yAxis = d3.axisLeft(
+				d3.scaleLinear()
+				.domain(scale.domain())
+				.range([graph_base, y_margin]));
+			svg.append("g")
+			.attr("id","axis")
+			.attr("transform",
+				"translate("+ x_margin + ", 0)")
+			.call(yAxis);
+			svg.select("#axis").selectAll("path")
+			.attr("fill","none")
+			.attr("stroke","black")
+			.attr("shape-rendering", "crispEdges");
+		}
+	}
+
+</script>
+</body>
+</html>
