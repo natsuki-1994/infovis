@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+         <meta charset="utf-8">
+         <title>D3 Test</title>
+         <script type="text/javascript" src="./lib/d3.js"></script>
+      </head>
+      <body>
+<script type="text/javascript">
+//
+// based on Hans Rosling's presentation and Mike Bostock's D3 example
+// http://www.ted.com/talks/hans_rosling_shows_the_best_stats_you_ve_ever_seen
+// http://bost.ocks.org/mike/nations/
+//
+var width = 1000;
+var height = 600;
+var offset = 40;
+var currentYear = 1800;
+var color = d3.scale.category10();
+
+
+
+
+d3.json("nations.json", function(nations) {
+
+  var bisect = d3.bisector(function(d){ return d[0];});
+
+
+
+
+  function interpolateValues(values, year)
+  {
+
+    var i = bisect.left(values, year, 0, values.length -1);
+    var a = values[i];
+
+    if(i>0)
+    {
+
+      var b = values[i-1];
+      var t = (year - a[0])/(b[0] - a[0]);
+      return Math.round(a[1] *(1-t) + b[1]*t);
+    }
+
+    return a[1];
+  }
+
+  function interpolateData()
+  {
+
+    return nations.map(
+      function(d) { return {
+          name: d.name,
+          region: d.region,
+          income: interpolateValues(d.income, currentYear),
+          population: interpolateValues(d.population, currentYear),
+          lifeExpectancy: interpolateValues(d.lifeExpectancy, currentYear)};
+      }
+    );
+  }
+
+});
+
+</script>
+</body></html>
