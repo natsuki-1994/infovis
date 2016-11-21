@@ -15,7 +15,7 @@
     var height = 600;
     var offset = 40;
     var currentYear = 1800;
-    var color = d3.schemeCategory20;
+    var color = d3.schemeCategory10;
 
     var incomeScale = d3.scaleLog().domain([100, 100000]).range([0, width]);
     var lifeScale = d3.scaleLinear().domain([10, 90]).range([height, 0]);
@@ -23,6 +23,8 @@
 
     var incomeAxis = d3.axisBottom(incomeScale).ticks(5, d3.format(",d"));
     var lifeAxis = d3.axisLeft(lifeScale);
+
+    var selectedItemsArray = [];
 
     var svg = d3.select("body").append("svg")
     .attr("width", width + 2 * offset)
@@ -70,6 +72,12 @@
     .attr("y", height - 35)
     .text(currentYear);
 
+    // ツールチップ用div
+    var div = d3.select("body")
+    .append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+
     d3.json("../csv/nations.json", function (nations) {
 
         createLabelArrays();
@@ -93,6 +101,7 @@
                 return populationScale(d.population);
             });
         }
+
         function order(a, b) {
             // bring smaller circles to the front
             return b.population - a.population;
@@ -110,13 +119,51 @@
         .attr("fill", function (d) {
             for (var j = 0; j < uniqueLabelArray.region.length; j++) {
                 if (d.region == uniqueLabelArray.region[j]) {
-                    return color[2 * j];
+                    return color[j];
                 }
             }
          })
         .attr("stroke", "black")
+        .on("mouseover", function (d) {
+            div.transition()
+            .duration(500)
+            .style("opacity", 1.0);
+            div.html(d.name + "<br>" + d.population)
+        })
+        .on("mouseout", function () {
+            div.transition()
+            .duration(500)
+            .style("opacity", 0.0);
+        })
         .call(position)
         .sort(order);
+
+        // 凡例描画
+        var legendItems = [];
+        for (var n = 0; n < uniqueLabelArray.region.length; n++) {
+            legendItems.push(uniqueLabelArray.region[n]);
+        }
+
+        var legend = svg.selectAll(".legend")
+        .data(legendItems)
+        .enter().append("g")
+        .attr("class", "legend")
+        .attr("transform", function (d, i) {
+            return "translate(600, " + (i * 20) + ")"
+        });
+        legend.append("rect")
+        .attr("x", 0)
+        .attr("width", 18)
+        .attr("height", 18)
+        .style("fill", function (d, i) {
+            return color[i];
+        });
+        legend.append("text")
+        .attr("x", 25)
+        .attr("y", 9)
+        .attr("dy", ".35em")
+        .style("text-anchor", "first")
+        .text(function (d) { return d; });
 
         // accept key events
         d3.select("body").on("keydown", function () {
@@ -138,15 +185,14 @@
             }
         }
 
-
         function interpolateValues(values, year) {
-            var i = bisect.left(values, year, 0, values.length -1);
+            var i = bisect.left(values, year, 0, values.length - 1);
             var a = values[i];
 
             if (i > 0) {
-                var b = values[i-1];
-                var t = (year - a[0])/(b[0] - a[0]);
-                return Math.round(a[1] *(1-t) + b[1]*t);
+                var b = values[i - 1];
+                var t = (year - a[0]) / (b[0] - a[0]);
+                return Math.round(a[1] * (1 - t) + b[1] * t);
             }
             return a[1];
         }
