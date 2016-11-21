@@ -15,7 +15,6 @@
     var height = 600;
     var offset = 40;
     var currentYear = 1800;
-    // var color = d3.scale.category10();
     var color = d3.schemeCategory20;
 
     var incomeScale = d3.scaleLog().domain([100, 100000]).range([0, width]);
@@ -71,7 +70,17 @@
     .attr("y", height - 35)
     .text(currentYear);
 
-    d3.json("../csv/nations.json", function(nations) {
+    d3.json("../csv/nations.json", function (nations) {
+
+        createLabelArrays();
+        function createLabelArrays() {
+            // removing duplicates on labels
+            uniqueLabelArray = {"region":[]};
+            nations.forEach(function (d) {
+                if (uniqueLabelArray.region.indexOf(d.region) < 0) uniqueLabelArray.region.push(d.region);
+            });
+        }
+        console.log(uniqueLabelArray);
 
         function position(p) {
             p.attr("cx", function (d) {
@@ -89,7 +98,7 @@
             return b.population - a.population;
         }
 
-        var bisect = d3.bisector(function(d){ return d[0];});
+        var bisect = d3.bisector( function (d){ return d[0]; });
 
         var circle = svg.append("g")
         .attr("class", "circles")
@@ -98,7 +107,13 @@
         .enter()
         .append("circle")
         .attr("class", "circle")
-        .attr("fill", "white")
+        .attr("fill", function (d) {
+            for (var j = 0; j < uniqueLabelArray.region.length; j++) {
+                if (d.region == uniqueLabelArray.region[j]) {
+                    return color[2 * j];
+                }
+            }
+         })
         .attr("stroke", "black")
         .call(position)
         .sort(order);
@@ -124,28 +139,21 @@
         }
 
 
-        function interpolateValues(values, year)
-        {
-
+        function interpolateValues(values, year) {
             var i = bisect.left(values, year, 0, values.length -1);
             var a = values[i];
 
-            if(i>0)
-            {
-
+            if (i > 0) {
                 var b = values[i-1];
                 var t = (year - a[0])/(b[0] - a[0]);
                 return Math.round(a[1] *(1-t) + b[1]*t);
             }
-
             return a[1];
         }
 
-        function interpolateData()
-        {
-
+        function interpolateData() {
             return nations.map(
-                function(d) { return {
+                function (d) { return {
                     name: d.name,
                     region: d.region,
                     income: interpolateValues(d.income, currentYear),
