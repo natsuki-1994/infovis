@@ -15,7 +15,7 @@
     var height = 600;
     var offset = 40;
     var currentYear = 1800;
-    var color = d3.schemeCategory10;
+    var color = d3.schemeCategory20;
 
     var incomeScale = d3.scaleLog().domain([100, 100000]).range([0, width]);
     var lifeScale = d3.scaleLinear().domain([10, 90]).range([height, 0]);
@@ -88,7 +88,7 @@
                 if (uniqueLabelArray.region.indexOf(d.region) < 0) uniqueLabelArray.region.push(d.region);
             });
         }
-        console.log(uniqueLabelArray);
+        // console.log(uniqueLabelArray);
 
         function position(p) {
             p.attr("cx", function (d) {
@@ -109,34 +109,59 @@
 
         var bisect = d3.bisector( function (d){ return d[0]; });
 
-        var circle = svg.append("g")
-        .attr("class", "circles")
-        .selectAll(".circle")
-        .data(interpolateData())
-        .enter()
-        .append("circle")
+        var functionHoge = function() {
+            circle.data(interpolateData(currentYear), function (d) {
+                return d.name;
+            }).attr("opacity", function (d) {
+                for (var j = 0; j < uniqueLabelArray.region.length; j++) {
+                    if (d.region == uniqueLabelArray.region[j]) {
+                        if (d.region == selected) {
+                            return 1.0;
+                        } else {
+                            return 0.3;
+                        }
+                    }
+                }
+            }).call(position).sort(order);
+        };
+
+        var functionPiyo = function () {
+            circle.data(interpolateData(currentYear), function (d) {
+                return d.name;
+            }).attr("opacity", 1.0)
+            .call(position).sort(order);
+        };
+
+        var selected = 0;
+        var circle = svg.append("g").attr("class", "circles").selectAll(".circle")
+        .data(interpolateData()).enter().append("circle")
         .attr("class", "circle")
         .attr("fill", function (d) {
             for (var j = 0; j < uniqueLabelArray.region.length; j++) {
                 if (d.region == uniqueLabelArray.region[j]) {
-                    return color[j];
+                    return color[j * 2];
                 }
             }
          })
         .attr("stroke", "black")
         .on("mouseover", function (d) {
+            selected = d.region;
             div.transition()
             .duration(500)
             .style("opacity", 1.0);
-            div.html(d.name + "<br>" + d.population)
+            div.html(d.name + "<br>" + d.population);
+            functionHoge();
         })
         .on("mouseout", function () {
             div.transition()
             .duration(500)
             .style("opacity", 0.0);
+            functionPiyo();
         })
         .call(position)
         .sort(order);
+
+        console.log(selected);
 
         // 凡例描画
         var legendItems = [];
@@ -148,6 +173,7 @@
         .data(legendItems)
         .enter().append("g")
         .attr("class", "legend")
+        .attr("onclick", "funchoge(this)")
         .attr("transform", function (d, i) {
             return "translate(600, " + (i * 20) + ")"
         });
@@ -156,7 +182,7 @@
         .attr("width", 18)
         .attr("height", 18)
         .style("fill", function (d, i) {
-            return color[i];
+            return color[i * 2];
         });
         legend.append("text")
         .attr("x", 25)
@@ -171,12 +197,12 @@
         });
 
         function updateYear(key) {
-            //console.log(key);
+            // console.log(key);
             if (key == 37 && currentYear != 1800) {
                 yearLabel.text(Math.round(--currentYear));
                 circle.data(interpolateData(currentYear), function (d) {
                     return d.name;
-                }).call(position).sort(order);
+                }).attr("fill", "black").call(position).sort(order);
             } else if (key == 39 && currentYear != 2009) {
                 yearLabel.text(Math.round(++currentYear));
                 circle.data(interpolateData(currentYear), function (d) {
@@ -199,12 +225,14 @@
 
         function interpolateData() {
             return nations.map(
-                function (d) { return {
-                    name: d.name,
-                    region: d.region,
-                    income: interpolateValues(d.income, currentYear),
-                    population: interpolateValues(d.population, currentYear),
-                    lifeExpectancy: interpolateValues(d.lifeExpectancy, currentYear)};
+                function (d) {
+                    return {
+                        name: d.name,
+                        region: d.region,
+                        income: interpolateValues(d.income, currentYear),
+                        population: interpolateValues(d.population, currentYear),
+                        lifeExpectancy: interpolateValues(d.lifeExpectancy, currentYear)
+                    };
                 }
             );
         }

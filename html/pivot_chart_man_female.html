@@ -62,7 +62,7 @@
 		d3.select("#control_job").selectAll("tr").data(uniqueLabelArray.occupation).enter()
 		.append("tr")
 		.attr("id", function (d, i) { return "job" + i; })
-		.attr("onclick","changeHighlight(this)")
+		.attr("onclick", "changeHighlight(this)")
 		.append("td")
 		.text(function (d) { return d; });
 
