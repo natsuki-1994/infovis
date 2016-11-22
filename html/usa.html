@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Test</title>
+        <script src="../lib/d3.js" charset="utf-8"></script>
+        <script src="../lib/topojson.js" charset="utf-8"></script>
+        <script src="../lib/us_unemployment_rate.csv" charset="utf-8"></script>
+    </head>
+<body>
+<script type="text/javascript">
+
+    var width = 800;
+    var height = 800;
+
+    var color = d3.scaleLinear()
+    .domain([500000, 13000000])
+    .range([255, 0]);
+
+    var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+    var populationHash_2010 = {};
+    var populationHash_2000 = {};
+
+    JapanPopulationData.Data.forEach(function (d) {
+        populationHash_2010[d.Prefecture] = d.Population_2010;
+        populationHash_2000[d.Prefecture] = d.Population_2000;
+    });
+
+    console.log(populationHash_2010);
+    console.log(populationHash_2000);
+
+    d3.json("../lib/japan.topojson", function (data) {
+        var japan = topojson.feature(data, data.objects.japan);
+
+        // Mercator projection
+        var projection = d3.geoMercator()
+        .center([137, 34])
+        .translate([width / 2, height / 2])
+        .scale(1500);
+
+        var path = d3.geoPath().projection(projection);
+
+        svg.selectAll("path")
+        .data(japan.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .attr("fill", function (d) {
+            console.log(d.properties);
+            if (populationHash_2010[d.properties.nam_ja] > populationHash_2000[d.properties.nam_ja]) {
+                if ((populationHash_2010[d.properties.nam_ja] - populationHash_2000[d.properties.nam_ja]) > 50000) {
+                    return "blue";
+                } else if ((populationHash_2010[d.properties.nam_ja] - populationHash_2000[d.properties.nam_ja]) > 20000) {
+                    return "#1e90ff"
+                } else {
+                    return "white"
+                }
+            } else {
+                if ((populationHash_2000[d.properties.nam_ja] - populationHash_2010[d.properties.nam_ja]) > 50000) {
+                    return "red";
+                } else if ((populationHash_2000[d.properties.nam_ja] - populationHash_2010[d.properties.nam_ja]) > 20000){
+                    return "#ffb6c1";
+                } else {
+                    return "white"
+                }
+            }
+            // return "rgb(255, " + Math.floor(color(populationHash[d.properties.nam_ja + "_2010"])) + "," + Math.floor(color(populationHash[d.properties.nam_ja + "_2010"])) + ")";
+        })
+        .attr("stroke", "#333333")
+        .attr("stroke-width", 0.5)
+        .on("mouseover", function (d) {
+            showDetails(d.properties.nam_ja + "_2010");
+        });
+
+        var pref_details = svg.append("text")
+        .attr("x", 50)
+        .attr("y", 50)
+        .attr("font-size", 24)
+        .attr("stroke", "none")
+        .attr("fill", "black");
+
+        function showDetails(pref) {
+            pref_details.text(pref + ": " + populationHash[pref] + "人");
+        }
+    })
+
+</script>
+</body></html>
