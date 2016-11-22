@@ -10,82 +10,62 @@
 <body>
 <script type="text/javascript">
 
-    var width = 800;
-    var height = 800;
+    var width = 1500;
+    var height = 1500;
 
     var color = d3.scaleLinear()
-    .domain([500000, 13000000])
+    .domain([0, 0.30])
     .range([255, 0]);
 
     var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-    var populationHash_2010 = {};
-    var populationHash_2000 = {};
+    var unemploymentHash = {};
 
-    JapanPopulationData.Data.forEach(function (d) {
-        populationHash_2010[d.Prefecture] = d.Population_2010;
-        populationHash_2000[d.Prefecture] = d.Population_2000;
-    });
+    d3.csv("../lib/us_unemployment_rate.csv", function (error, data) {
+        for (var i = 0; i < data.length; i++) {
+            unemploymentHash[data[i]["County"]] = data[i]["Unemployment"]
+        }
 
-    console.log(populationHash_2010);
-    console.log(populationHash_2000);
+        console.log(unemploymentHash);
 
-    d3.json("../lib/japan.topojson", function (data) {
-        var japan = topojson.feature(data, data.objects.japan);
+        d3.json("../lib/us-counties.topojson", function (data) {
+            var usa = topojson.feature(data, data.objects.counties);
 
-        // Mercator projection
-        var projection = d3.geoMercator()
-        .center([137, 34])
-        .translate([width / 2, height / 2])
-        .scale(1500);
+            var projection = d3.geoMercator()
+            .center([-130, 60])
+            .scale(500);
 
-        var path = d3.geoPath().projection(projection);
+            console.log(projection.scale());
 
-        svg.selectAll("path")
-        .data(japan.features)
-        .enter()
-        .append("path")
-        .attr("d", path)
-        .attr("fill", function (d) {
-            console.log(d.properties);
-            if (populationHash_2010[d.properties.nam_ja] > populationHash_2000[d.properties.nam_ja]) {
-                if ((populationHash_2010[d.properties.nam_ja] - populationHash_2000[d.properties.nam_ja]) > 50000) {
-                    return "blue";
-                } else if ((populationHash_2010[d.properties.nam_ja] - populationHash_2000[d.properties.nam_ja]) > 20000) {
-                    return "#1e90ff"
-                } else {
-                    return "white"
-                }
-            } else {
-                if ((populationHash_2000[d.properties.nam_ja] - populationHash_2010[d.properties.nam_ja]) > 50000) {
-                    return "red";
-                } else if ((populationHash_2000[d.properties.nam_ja] - populationHash_2010[d.properties.nam_ja]) > 20000){
-                    return "#ffb6c1";
-                } else {
-                    return "white"
-                }
-            }
-            // return "rgb(255, " + Math.floor(color(populationHash[d.properties.nam_ja + "_2010"])) + "," + Math.floor(color(populationHash[d.properties.nam_ja + "_2010"])) + ")";
-        })
-        .attr("stroke", "#333333")
-        .attr("stroke-width", 0.5)
-        .on("mouseover", function (d) {
-            showDetails(d.properties.nam_ja + "_2010");
+            var path = d3.geoPath().projection(projection);
+
+            svg.selectAll("path")
+            .data(usa.features)
+            .enter()
+            .append("path")
+            .attr("d", path)
+            .attr("fill", "red")
+            .attr("stroke", "#333333")
+            .attr("stroke-width", 0.5)
+            .on("mouseover", function (d) {
+                showDetails(d.id);
+                console.log(d);
+            });
         });
 
         var pref_details = svg.append("text")
         .attr("x", 50)
         .attr("y", 50)
-        .attr("font-size", 24)
+        .attr("font-size", 18)
         .attr("stroke", "none")
         .attr("fill", "black");
 
-        function showDetails(pref) {
-            pref_details.text(pref + ": " + populationHash[pref] + "人");
+        function showDetails(county_id) {
+            pref_details.text("失業率: " + unemploymentHash[county_id]);
         }
-    })
+    });
 
 </script>
 </body></html>
