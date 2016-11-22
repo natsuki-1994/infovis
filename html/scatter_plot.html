@@ -2,7 +2,7 @@
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
          <meta charset="utf-8">
          <title>D3 Test</title>
-         <script type="text/javascript" src="../javascript/d3.js"></script>
+         <script type="text/javascript" src="../lib/d3.js"></script>
       </head>
       <body>
 <script type="text/javascript">
@@ -78,7 +78,7 @@
     .attr("class", "tooltip")
     .style("opacity", 0);
 
-    d3.json("../csv/nations.json", function (nations) {
+    d3.json("../lib/nations.json", function (nations) {
 
         createLabelArrays();
         function createLabelArrays() {

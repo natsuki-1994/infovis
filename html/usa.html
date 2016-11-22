@@ -28,7 +28,7 @@
             unemploymentHash[data[i]["County"]] = data[i]["Unemployment"]
         }
 
-        console.log(unemploymentHash);
+//        console.log(unemploymentHash);
 
         d3.json("../lib/us-counties.topojson", function (data) {
             var usa = topojson.feature(data, data.objects.counties);
@@ -58,18 +58,26 @@
                 showDetails(d.id);
                 console.log(d);
             });
+
+            var pref_details = svg.append("text")
+            .attr("x", 450)
+            .attr("y", 100)
+            .attr("font-size", 18)
+            .attr("stroke", "none")
+            .attr("fill", "black");
+
+            svg.append("text")
+            .attr("x", 450)
+            .attr("y", 50)
+            .attr("font-size", 30)
+            .attr("stroke", "none")
+            .attr("fill", "black")
+            .text("Unemployment Rate Of USA");
+
+            function showDetails(county_id) {
+                pref_details.text("失業率: " + unemploymentHash[county_id]);
+            }
         });
-
-        var pref_details = svg.append("text")
-        .attr("x", 50)
-        .attr("y", 50)
-        .attr("font-size", 18)
-        .attr("stroke", "none")
-        .attr("fill", "black");
-
-        function showDetails(county_id) {
-            pref_details.text("失業率: " + unemploymentHash[county_id]);
-        }
     });
 
 </script>
