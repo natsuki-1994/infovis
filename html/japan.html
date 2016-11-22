@@ -21,13 +21,16 @@
     .attr("width", width)
     .attr("height", height);
 
-    var populationHash = {};
+    var populationHash_2010 = {};
+    var populationHash_2000 = {};
 
     JapanPopulationData.Data.forEach(function (d) {
-        populationHash[d.Prefecture] = d.Population_2010;
+        populationHash_2010[d.Prefecture] = d.Population_2010;
+        populationHash_2000[d.Prefecture] = d.Population_2000;
     });
 
-    console.log(populationHash);
+    console.log(populationHash_2010);
+    console.log(populationHash_2000);
 
     d3.json("../lib/japan.topojson", function (data) {
         var japan = topojson.feature(data, data.objects.japan);
@@ -46,12 +49,30 @@
         .append("path")
         .attr("d", path)
         .attr("fill", function (d) {
-            return "rgb(255, " + Math.floor(color(populationHash[d.properties.nam_ja])) + "," + Math.floor(color(populationHash[d.properties.nam_ja])) + ")";
+            console.log(d.properties);
+            if (populationHash_2010[d.properties.nam_ja] > populationHash_2000[d.properties.nam_ja]) {
+                if ((populationHash_2010[d.properties.nam_ja] - populationHash_2000[d.properties.nam_ja]) > 50000) {
+                    return "blue";
+                } else if ((populationHash_2010[d.properties.nam_ja] - populationHash_2000[d.properties.nam_ja]) > 20000) {
+                    return "#1e90ff"
+                } else {
+                    return "white"
+                }
+            } else {
+                if ((populationHash_2000[d.properties.nam_ja] - populationHash_2010[d.properties.nam_ja]) > 50000) {
+                    return "red";
+                } else if ((populationHash_2000[d.properties.nam_ja] - populationHash_2010[d.properties.nam_ja]) > 20000){
+                    return "#ffb6c1";
+                } else {
+                    return "white"
+                }
+            }
+            // return "rgb(255, " + Math.floor(color(populationHash[d.properties.nam_ja + "_2010"])) + "," + Math.floor(color(populationHash[d.properties.nam_ja + "_2010"])) + ")";
         })
         .attr("stroke", "#333333")
         .attr("stroke-width", 0.5)
         .on("mouseover", function (d) {
-            showDetails(d.properties.nam_ja);
+            showDetails(d.properties.nam_ja + "_2010");
         });
 
         var pref_details = svg.append("text")
