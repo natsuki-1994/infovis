@@ -14,7 +14,7 @@
     var height = 1500;
 
     var color = d3.scaleLinear()
-    .domain([0, 0.30])
+    .domain([0, 0.301])
     .range([255, 0]);
 
     var svg = d3.select("body").append("svg")
@@ -46,7 +46,12 @@
             .enter()
             .append("path")
             .attr("d", path)
-            .attr("fill", "red")
+            .attr("fill", function (d) {
+                return "rgb(225, " +
+                        Math.floor(color(unemploymentHash[d.id])) + "," +
+                        Math.floor(color(unemploymentHash[d.id])) +
+                        ")";
+            })
             .attr("stroke", "#333333")
             .attr("stroke-width", 0.5)
             .on("mouseover", function (d) {
