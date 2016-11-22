@@ -67,23 +67,22 @@
                     return "white"
                 }
             }
-            // return "rgb(255, " + Math.floor(color(populationHash[d.properties.nam_ja + "_2010"])) + "," + Math.floor(color(populationHash[d.properties.nam_ja + "_2010"])) + ")";
         })
         .attr("stroke", "#333333")
         .attr("stroke-width", 0.5)
         .on("mouseover", function (d) {
-            showDetails(d.properties.nam_ja + "_2010");
+            showDetails(d.properties.nam_ja);
         });
 
         var pref_details = svg.append("text")
         .attr("x", 50)
         .attr("y", 50)
-        .attr("font-size", 24)
+        .attr("font-size", 18)
         .attr("stroke", "none")
         .attr("fill", "black");
 
         function showDetails(pref) {
-            pref_details.text(pref + ": " + populationHash[pref] + "人");
+            pref_details.text(pref + ": " + populationHash_2010[pref] + "人 (2010年) " + populationHash_2000[pref] + "人 (2000年)");
         }
     })
 
