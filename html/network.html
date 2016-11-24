@@ -23,7 +23,7 @@
 var nodes = [
   {name: "Amazon", id: 1},
   {name: "Apple", id: 2},
-  {name: "Barnes & Noble", id: 3},
+  {name: "BarnesNoble", id: 3},
   {name: "Ericsson", id: 4},
   {name: "Foxconn", id: 5},
   {name: "Google", id: 6},
@@ -50,7 +50,7 @@ var links = [
   {source: "Nokia", target: "Apple", type: "resolved"},
   {source: "HTC", target: "Apple", type: "suit"},
   {source: "Kodak", target: "Apple", type: "suit"},
-  {source: "Microsoft", target: "Barnes & Noble", type: "suit"},
+  {source: "Microsoft", target: "BarnesNoble", type: "suit"},
   {source: "Microsoft", target: "Foxconn", type: "suit"},
   {source: "Oracle", target: "Google", type: "suit"},
   {source: "Apple", target: "HTC", type: "suit"},
@@ -73,6 +73,14 @@ var links = [
   {source: "Nokia", target: "Qualcomm", type: "suit"}
 ];
 
+var linksCopy = [];
+for (var n = 0; n < links.length; n++) {
+  var tempHash = {};
+  tempHash["source"] = links[n]["source"];
+  tempHash["target"] = links[n]["target"];
+  tempHash["type"] = links[n]["type"];
+  linksCopy.push(tempHash);
+}
 
 var width = 600;
 var height = 500;
@@ -89,7 +97,8 @@ var comp_text = text.text(function (d) { return d.name; })
         .attr("fill", "black")
         .attr("stroke", "none")
         .on("mouseover", textEntered)
-        .on("mouseout", textLeft);
+        .on("mouseout", textLeft)
+        .on("click", changeHighlight);
 
 var svg_graph = d3.select("#graph").append("svg")
         .attr("width", width)
@@ -104,7 +113,10 @@ var simulation = d3.forceSimulation()
 
 var link = svg_graph.selectAll("line").data(links).enter().append("line")
         .attr("stroke", "lightgrey")
-        .attr("stroke-width", 2);
+        .attr("stroke-width", 2)
+        .attr("class", function (d) {
+          return d.source + "_" + d.target + "_" + d.type;
+        });
 
 var node = svg_graph.selectAll("circle").data(nodes).enter().append("g")
         .attr("class", "node_group")
@@ -124,6 +136,9 @@ svg_graph.selectAll(".node_group").append("circle")
 svg_graph.selectAll(".node_group").append("text")
         .attr("stroke", "none")
         .attr("fill", "black")
+        .attr("class", function (d) {
+          return d.name;
+        })
         .text(function (d) {
           return d.name;
         });
@@ -134,7 +149,6 @@ simulation
 
 simulation.force("link")
         .links(links).distance(50);
-
 
 function ticked() {
   link
@@ -177,6 +191,69 @@ function textEntered(d) {
 
 function textLeft(d) {
   svg_graph.selectAll("circle").attr("fill", "black");
+  svg_graph.selectAll("line").attr("stroke", "lightgrey");
+  svg_graph.selectAll("text").attr("fill", "black");
+}
+
+function changeHighlight(d) {
+  var tempArrayTarget = [];
+  var tempArrayType = [];
+  var tempArrayTargetId = [];
+
+  for (var i = 0; i < linksCopy.length; i++) {
+    if (linksCopy[i]["source"] == d.name) {
+      tempArrayTarget.push(linksCopy[i]["target"]);
+      tempArrayType.push(linksCopy[i]["type"]);
+    }
+  }
+  for (var k = 0; k < nodes.length; k++) {
+    for (var r = 0; r < tempArrayTarget.length; r++) {
+      if (nodes[k]["name"] == tempArrayTarget[r]) {
+        tempArrayTargetId.push(nodes[k]["id"]);
+      }
+    }
+  }
+
+  console.log(tempArrayTarget);
+  console.log(tempArrayTargetId);
+
+  svg_graph.selectAll("circle").attr("fill", "lightgrey");
+  svg_graph.selectAll("circle").attr("stroke", "lightgrey");
+  svg_graph.select(".node_" + d.id).attr("fill", "blue");
+
+  for (var j = 0; j < tempArrayTarget.length; j++) {
+    // Targetをひとつずつ読みだし
+    var mutualFirstFlag = -1;
+    var mutualSecondFlag = -1;
+    for (var p = 0; p < links.length; p++) {
+      if ((linksCopy[p]["source"] == d.name) && (linksCopy[p]["target"] == tempArrayTarget[j])) {
+        mutualFirstFlag = p;
+      }
+      if ((linksCopy[p]["source"] == tempArrayTarget[j] && linksCopy[p]["target"] == d.name)) {
+        mutualSecondFlag = p;
+      }
+    }
+    if (mutualFirstFlag > mutualSecondFlag) {
+      svg_graph.select("." + d.name + "_" + tempArrayTarget[j] + "_" + tempArrayType[j]).attr("stroke", "black");
+    } else {
+      svg_graph.select("." + tempArrayTarget[j] + "_" + d.name + "_" + tempArrayType[j]).attr("stroke", "black");
+    }
+    if (mutualFirstFlag != -1 && mutualSecondFlag != -1) {
+      if (mutualFirstFlag > mutualSecondFlag) {
+        svg_graph.select("." + d.name + "_" + tempArrayTarget[j] + "_" + tempArrayType[j]).attr("stroke", "red");
+      } else {
+        svg_graph.select("." + tempArrayTarget[j] + "_" + d.name + "_" + tempArrayType[j]).attr("stroke", "red");
+      }
+    }
+  }
+  for (var q = 0; q < tempArrayTargetId.length; q++) {
+    svg_graph.select(".node_" + tempArrayTargetId[q]).attr("fill", "orange");
+  }
+
+  svg_graph.select("." + d.name).attr("fill", "blue");
+  for (var u = 0; u < tempArrayTarget.length; u++) {
+    svg_graph.select("." + tempArrayTarget[u]).attr("fill", "orange");
+  }
 }
 
 </script>
