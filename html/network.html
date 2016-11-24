@@ -172,7 +172,7 @@ function dragended(d) {
 }
 
 function textEntered(d) {
-  svg_graph.select(".node" + d.id).attr("fill", "red");
+  svg_graph.select(".node_" + d.id).attr("fill", "red");
 }
 
 function textLeft(d) {
